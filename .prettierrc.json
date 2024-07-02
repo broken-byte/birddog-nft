@@ -24,6 +24,18 @@
         "bracketSpacing": true,
         "semi": true
       }
+    },
+    {
+      "files": "*.md",
+      "options": {
+        "parser": "markdown",
+        "printWidth": 100,
+        "proseWrap": "never",
+        "tabWidth": 2,
+        "useTabs": false,
+        "singleQuote": false,
+        "trailingComma": "none"
+      }
     }
   ]
 }
