@@ -1,8 +1,20 @@
 # The $BIRDDOG NFT
 
+![Birddog in a football stadium with red goggles and a red headband](assets/images/3.png)
+
 ## Description
 
-$BIRDOG is the leading memecoin on Base 🔵 Now, you can own BIRDOG as a unique series of NFT collectible art pieces with unique on chain rewards 🐦🐶✨
+$BIRDOG is the leading memecoin on Base 🔵 Now, you can own BIRDOG as a unique series of NFT collectible art pieces. Owning any of these makes you eligible for incoming on chain rewards 🐦🐶✨
+
+## TLDR
+
+The NFT collection will have:
+
+- 3000 [ERC-1155](https://ethereum.org/en/developers/docs/standards/tokens/erc-1155/) unique art pieces of varying degrees of rarity corresponding to traits/backgrounds/skins
+- a premint airdrop to holders of the $BIRDDOG token who participated in the NFT whitelist event in April/June 2024
+- A post airdrop mint page
+- Arist/Creator royalties of 2%
+- Each NFT makes you elligible to future rewards/airdrops in the Base Boys Club Meta
 
 ## Birddog, the token
 
@@ -18,12 +30,6 @@ $BIRDDOG is live right now on Base, below are some details:
 
 The birddog NFT is a true homage to our favorite Matth Furie Boy's Club character. 3000 fan made art pieces with unique traits, backgrounds, and styles. Each NFT entitles you to future rewards proportional to your holding periods and automatic inclusion in future Matt Furie Base airdrops.
 
-## TLDR
+## Token Design
 
-The NFT collection will have:
-
-- 3000 unique art pieces of varying degrees of rarity corresponding to traits/backgrounds/skins
-- a premint airdrop to holders of the $BIRDDOG token who participated in the NFT whitelist event in April/June 2024
-- A post airdrop mint page
-- Arist/Creator royalties of 2%
-- Each NFT makes you elligible to future rewards/airdrops in the Base Boys Club Meta
+We chose to implement our NFT collection using the [ERC-1155](https://ethereum.org/en/developers/docs/standards/tokens/erc-1155/) standard. We did this standard over the more simple [ERC-721](https://ethereum.org/en/developers/docs/standards/tokens/erc-721/) standard because of our premint and airdrop for $BIRDDOG coin holders. [ERC-1155](https://ethereum.org/en/developers/docs/standards/tokens/erc-1155/) is more efficient for large batch transfers like ours and, despite launching this NFT collection on an efficient chain (Base), we feel that it's always better to ere on the side of efficiency when it comes to smart contract design.
