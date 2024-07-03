@@ -2,6 +2,8 @@
 [0-9]*.png
 [0-9]*.json
 
+# But do not ignore 3.png
+!3.png
 
 # Logs
 logs
