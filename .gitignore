@@ -1,3 +1,8 @@
+# NFT specific image assets (these will be uploaded to IPFS)
+[0-9]*.png
+[0-9]*.json
+
+
 # Logs
 logs
 *.log
