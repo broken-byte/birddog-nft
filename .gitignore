@@ -1,9 +1,17 @@
 # NFT specific image assets (these will be uploaded to IPFS)
 [0-9]*.png
 [0-9]*.json
+_metadata.json
 
 # But do not ignore 3.png
 !3.png
+
+# Also, don't ignore test assets
+!test-assets/images/[0-9]*.png
+!test-assets/json/[0-9]*.json
+
+# Mac files system
+.DS_Store
 
 # Logs
 logs
