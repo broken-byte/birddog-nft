@@ -1,0 +1,39 @@
+{
+  "name": " #1",
+  "description": "",
+  "image": "ipfs:///1.png",
+  "dna": "cf48ead436be342219fc68c490497e69c2c27963",
+  "edition": 1,
+  "date": 1716978706463,
+  "attributes": [
+    {
+      "trait_type": "background",
+      "value": "beige"
+    },
+    {
+      "trait_type": "base",
+      "value": "base"
+    },
+    {
+      "trait_type": "clothes",
+      "value": "basketball 24"
+    },
+    {
+      "trait_type": "eyes",
+      "value": "zinka"
+    },
+    {
+      "trait_type": "hand",
+      "value": "none"
+    },
+    {
+      "trait_type": "hats",
+      "value": "orange beanie"
+    },
+    {
+      "trait_type": "mouth",
+      "value": "none"
+    }
+  ],
+  "compiler": "HashLips Art Engine"
+}
