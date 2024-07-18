@@ -1,5 +1,4 @@
 import pinataSDK from '@pinata/sdk';
-import path from 'path';
 
 const pinata = new pinataSDK({ pinataJWTKey: process.env.PINATA_JWT });
 const directoryNameActual = 'birddog-nft-images';
