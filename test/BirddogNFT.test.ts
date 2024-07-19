@@ -3,24 +3,36 @@ import { Signer } from 'ethers';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { BirddogNFT } from '../typechain-types';
+import { IPFS_HASH, BIRDDOG_NFT_NAME, BIRDDOG_NFT_SYMBOL } from '../Constants';
 
 describe('Birddog NFT', function () {
-  const IPFS_HASH = 'QmR1eRsCqpMsHq9KaGHBGRw4YWjhj9kCwyeozCoH7am2Vb';
-
   async function deployBirddogNFTFixture(): Promise<{
     accounts: Signer[];
     contract: BirddogNFT;
   }> {
     const accounts = await ethers.getSigners();
     const ownerAddress = await accounts[0].getAddress();
-    const name = 'BirddogNFT';
-    const symbol = 'BDOG';
+    const artistAddress = await accounts[1].getAddress();
+    const royaltyMultisigAddress = await accounts[2].getAddress();
     const baseUri = `ipfs://${IPFS_HASH}/`;
 
+    /**
+     * constructor(
+    string memory _name,
+    string memory _symbol,
+    address owner,
+    address artist,
+    address royaltyMultisig,
+    string memory _initBaseURI
+  )
+     */
+
     const contract = await ethers.deployContract('BirddogNFT', [
-      name, // _name
-      symbol, // _symbol
+      BIRDDOG_NFT_NAME, // _name
+      BIRDDOG_NFT_SYMBOL, // _symbol
       ownerAddress, // owner
+      artistAddress, // artist
+      royaltyMultisigAddress, // royaltyMultisig
       baseUri, // _initBaseURI
     ]);
 
@@ -29,21 +41,60 @@ describe('Birddog NFT', function () {
     return { accounts, contract };
   }
 
+  async function callBirdDogMemeCoinAirdropFunctionToMoveStateForward(
+    accounts: Signer[],
+    contract: BirddogNFT
+  ) {
+    const birddogHolderRecipients: string[] = [
+      await accounts[2].getAddress(),
+      await accounts[3].getAddress(),
+    ];
+    const birddogHolderAmounts: number[] = [2, 4];
+
+    await contract.airdropToBirdDogMemecoinParticipants(
+      birddogHolderRecipients,
+      birddogHolderAmounts
+    );
+  }
+
   describe('Constructor', function () {
+    it('should set the name', async function () {
+      const { contract } = await loadFixture(deployBirddogNFTFixture);
+      expect(await contract.name()).to.equal(BIRDDOG_NFT_NAME);
+    });
+
+    it('should set the symbol', async function () {
+      const { contract } = await loadFixture(deployBirddogNFTFixture);
+      expect(await contract.symbol()).to.equal(BIRDDOG_NFT_SYMBOL);
+    });
+
     it('should set the owner', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       const ownerAddress = await accounts[0].getAddress();
       expect(await contract.owner()).to.equal(ownerAddress);
     });
 
-    it('should set the name', async function () {
-      const { contract } = await loadFixture(deployBirddogNFTFixture);
-      expect(await contract.name()).to.equal('BirddogNFT');
+    it('should have set the royalty info as 7.5% to the royalty multisig address', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      const royaltyMultisigAddress = await accounts[2].getAddress();
+      const someSalePrice = ethers.parseEther('0.04');
+      const expectedRoyaltyAmount = (someSalePrice * BigInt(750)) / BigInt(10000);
+
+      // Check the royalty info for any arbitrary token
+      const [royaltyReceiver, royaltyAmount] = await contract.royaltyInfo(
+        37,
+        ethers.parseEther('0.04')
+      );
+      expect(royaltyReceiver).to.equal(royaltyMultisigAddress);
+      expect(royaltyAmount).to.equal(expectedRoyaltyAmount);
     });
 
-    it('should set the symbol', async function () {
-      const { contract } = await loadFixture(deployBirddogNFTFixture);
-      expect(await contract.symbol()).to.equal('BDOG');
+    it('should have minted #37 and #1248, and the first 5 to the artist address', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      const artistAddress = await accounts[1].getAddress();
+      expect(await contract.balanceOf(artistAddress)).to.equal(7);
+      expect(await contract.ownerOf(37)).to.equal(artistAddress);
+      expect(await contract.ownerOf(1248)).to.equal(artistAddress);
     });
 
     it('should set the base URI', async function () {
@@ -52,6 +103,8 @@ describe('Birddog NFT', function () {
 
       expect(await contract.baseURI()).to.equal(baseUri);
     });
+
+    it('should have set the default royalty info to 7.5% to a royalty multisig address');
 
     it('should set the token state to launched', async function () {
       const { contract } = await loadFixture(deployBirddogNFTFixture);
@@ -134,11 +187,10 @@ describe('Birddog NFT', function () {
     });
   });
 
-  describe('mintAirdropToCoinHoldersOfBirddogAndArtist', function () {
-    it('should mint and airdrop to the coin holders of Birddog and #37 to the artist', async function () {
+  describe('airdropToBirdDogMemecoinParticipants', function () {
+    it('should mint and airdrop NFTs to participants in the Birddog coin holder NFT giveaway', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       const birddogHolderRecipients: string[] = [
-        await accounts[1].getAddress(),
         await accounts[2].getAddress(),
         await accounts[3].getAddress(),
         await accounts[4].getAddress(),
@@ -149,14 +201,12 @@ describe('Birddog NFT', function () {
         await accounts[9].getAddress(),
         await accounts[10].getAddress(),
         await accounts[11].getAddress(),
+        await accounts[12].getAddress(),
       ];
       const birddogHolderAmounts: number[] = [2, 4, 3, 1, 5, 5, 5, 5, 5, 5, 5]; // 11 addresses, 40 tokens total
-      const artistAddress = await accounts[12].getAddress();
-
-      await contract.mintAirdropToCoinHoldersOfBirddogAndArtist(
+      await contract.airdropToBirdDogMemecoinParticipants(
         birddogHolderRecipients,
-        birddogHolderAmounts,
-        artistAddress
+        birddogHolderAmounts
       );
 
       for (let i = 0; i < birddogHolderRecipients.length; i++) {
@@ -164,39 +214,54 @@ describe('Birddog NFT', function () {
           birddogHolderAmounts[i]
         );
       }
-
-      expect(await contract.balanceOf(artistAddress)).to.equal(6);
-      const tokensOwnedByArtist: bigint[] = await contract.getTokensOwnedByAddress(artistAddress);
-      expect(tokensOwnedByArtist).to.include(BigInt(37));
     });
 
     it('should revert if the sender is not the owner', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       const birddogHolderRecipients: string[] = [
-        await accounts[1].getAddress(),
         await accounts[2].getAddress(),
         await accounts[3].getAddress(),
-        await accounts[4].getAddress(),
-        await accounts[5].getAddress(),
-        await accounts[6].getAddress(),
-        await accounts[7].getAddress(),
-        await accounts[8].getAddress(),
-        await accounts[9].getAddress(),
-        await accounts[10].getAddress(),
-        await accounts[11].getAddress(),
       ];
-      const birddogHolderAmounts: number[] = [2, 4, 3, 1, 5, 5, 5, 5, 5, 5, 5]; // 11 addresses, 40 tokens total
-      const artistAddress = await accounts[12].getAddress();
+      const birddogHolderAmounts: number[] = [2, 4];
 
       await expect(
         contract
           .connect(accounts[1])
-          .mintAirdropToCoinHoldersOfBirddogAndArtist(
-            birddogHolderRecipients,
-            birddogHolderAmounts,
-            artistAddress
-          )
+          .airdropToBirdDogMemecoinParticipants(birddogHolderRecipients, birddogHolderAmounts)
       ).to.be.reverted;
+    });
+  });
+
+  describe('mint', function () {
+    it('should mint a token', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
+      await contract.pause(false);
+      const recipient = await accounts[4].getAddress();
+
+      await contract.mint(recipient, 1);
+
+      expect(await contract.balanceOf(recipient)).to.equal(1);
+    });
+
+    it('should revert if the contract is still paused', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
+      await contract.pause(true);
+      const recipient = await accounts[4].getAddress();
+
+      await expect(contract.mint(recipient, 1)).to.be.reverted;
+    });
+
+    it('should mint multiple tokens', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
+      await contract.pause(false);
+      const recipient = await accounts[4].getAddress();
+
+      await contract.mint(recipient, 3);
+
+      expect(await contract.balanceOf(recipient)).to.equal(3);
     });
   });
 });

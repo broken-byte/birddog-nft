@@ -28,6 +28,9 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Royalty.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+// Debugging
+import "hardhat/console.sol";
+
 contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   using Strings for uint256;
 
@@ -44,7 +47,10 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   uint256 public cost = 0.04 ether;
   uint256 public maxSupply = 3000;
   uint256 public maxMintAmount = 5;
+  uint256 public tokenMintCounter = 1;
   bool public paused = true;
+
+  mapping(address => uint256) private mintEarningAllocations;
 
   modifier inState(TokenState _state) {
     require(_state == state, "Function cannot be called in this state");
@@ -55,26 +61,29 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     string memory _name,
     string memory _symbol,
     address owner,
+    address artist,
+    address royaltyMultisig,
     string memory _initBaseURI
   ) ERC721(_name, _symbol) Ownable(owner) {
     setBaseURI(_initBaseURI);
+
+    _setDefaultRoyalty(royaltyMultisig, 750); // 7.5%
+
+    // Mint first 5 to the artist
+    for (uint256 i = 0; i < 5; i++) {
+      _safeMint(artist, tokenMintCounter);
+      tokenMintCounter++;
+    }
+
+    _safeMint(artist, 37); // Reserve token #37 for artist
+    _safeMint(artist, 1248); // Reserve token #1248 for artist
+
     state = TokenState.Launched;
   }
 
-  function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-    _requireOwned(tokenId);
-
-    string memory currentBaseURI = _baseURI();
-    return
-      bytes(currentBaseURI).length > 0
-        ? string(abi.encodePacked(currentBaseURI, tokenId.toString(), baseExtension))
-        : "";
-  }
-
-  function mintAirdropToCoinHoldersOfBirddogAndArtist(
+  function airdropToBirdDogMemecoinParticipants(
     address[] memory recipients,
-    uint256[] memory recipientAmounts,
-    address artist
+    uint256[] memory recipientAmounts
   ) public onlyOwner inState(TokenState.Launched) {
     require(state == TokenState.Launched, "Token is not in Launched state");
     require(recipients.length == recipientAmounts.length, "Array lengths do not match");
@@ -82,41 +91,23 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     for (uint256 i = 0; i < recipients.length; i++) {
       uint mintAmount = recipientAmounts[i];
       require(mintAmount <= maxMintAmount, "Mint amount exceeds max mint amount");
-      uint256 supply = totalSupply();
 
-      // Reserve token #37 for artist
-      if (supply + mintAmount >= 37 && supply < 37) {
-        uint256 tokenGapBetweenCurrentSupplyAnd37 = 37 - supply - 1; // offset by 1 because supply is 0 indexed
-        for (uint j = 1; j <= tokenGapBetweenCurrentSupplyAnd37; j++) {
-          _safeMint(recipients[i], supply + j);
+      for (uint j = 0; j < mintAmount; j++) {
+        if (alreadyMinted(tokenMintCounter)) {
+          tokenMintCounter++;
         }
 
-        _safeMint(artist, 37);
-
-        // mint the rest of the tokens owed to the to the current recipient, if any
-        mintAmount -= tokenGapBetweenCurrentSupplyAnd37;
-        if (mintAmount > 0) {
-          for (uint j = 38; j < 38 + mintAmount; j++) {
-            _safeMint(recipients[i], j);
-          }
-        }
-      } else {
-        for (uint j = 1; j <= mintAmount; j++) {
-          _safeMint(recipients[i], supply + j);
-        }
+        _safeMint(recipients[i], tokenMintCounter);
+        tokenMintCounter++;
       }
-    }
-
-    // Mint 5 more tokens to the artist at the end
-    for (uint256 i = 1; i <= 5; i++) {
-      _safeMint(artist, totalSupply() + i);
     }
 
     state = TokenState.BirddogCoinHoldersAirdropped;
   }
 
-  function _baseURI() internal view virtual override returns (string memory) {
-    return baseURI;
+  function alreadyMinted(uint256 tokenId) private view returns (bool) {
+    require(tokenId <= 3000, "Token ID invalid");
+    return _ownerOf(tokenId) != address(0);
   }
 
   function mint(
@@ -124,10 +115,10 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     uint256 _mintAmount
   ) public payable inState(TokenState.BirddogCoinHoldersAirdropped) {
     uint256 supply = totalSupply();
-    require(!paused);
-    require(_mintAmount > 0);
-    require(_mintAmount <= maxMintAmount);
-    require(supply + _mintAmount <= maxSupply);
+    require(!paused, "Contract is paused");
+    require(_mintAmount > 0, "You cannot mint 0 tokens");
+    require(_mintAmount <= maxMintAmount, "You are not allowed to buy this many tokens at once");
+    require(supply + _mintAmount <= maxSupply, "Exceeds maximum supply");
 
     if (msg.sender != owner()) {
       require(msg.value >= cost * _mintAmount);
@@ -140,6 +131,20 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     if (supply + _mintAmount == maxSupply) {
       state = TokenState.Soldout;
     }
+  }
+
+  function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+    require(tokenId <= 3000, "Token ID invalid");
+
+    string memory currentBaseURI = _baseURI();
+    return
+      bytes(currentBaseURI).length > 0
+        ? string(abi.encodePacked(currentBaseURI, tokenId.toString(), baseExtension))
+        : "";
+  }
+
+  function _baseURI() internal view virtual override returns (string memory) {
+    return baseURI;
   }
 
   function getTokensOwnedByAddress(address _address) public view returns (uint256[] memory) {
@@ -173,12 +178,19 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   }
 
   function withdraw() public payable onlyOwner {
-    // This will payout the owner 100% of the contract balance.
-    // Do not remove this otherwise you will not be able to withdraw the funds.
-    // =============================================================================
+    /**
+     *
+     * This will payout percentages of the contract balance to:
+     * Birddog Memecoin treasury -> 40%
+     * Zlurpee Memecoin treasury -> 40%
+     * Artist -> 10%
+     * Contract Owner -> 10%
+     */
+
+    // Implement ============================================================
+
     (bool os, ) = payable(owner()).call{value: address(this).balance}("");
     require(os);
-    // =============================================================================
   }
 
   // ERC721Royalty Override
