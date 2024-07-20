@@ -45,12 +45,15 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   string public baseURI;
   string public baseExtension = ".json";
   uint256 public cost = 0.04 ether;
-  uint256 public maxSupply = 3000;
+
+  uint256 public constant MAX_SUPPLY = 3000;
+
   uint256 public maxMintAmount = 5;
   uint256 public tokenMintCounter = 1;
   bool public paused = true;
 
-  mapping(address => uint256) private mintEarningAllocations;
+  address[] public withdrawAddresses;
+  uint256[] public withdrawPercentageNumerators;
 
   modifier inState(TokenState _state) {
     require(_state == state, "Function cannot be called in this state");
@@ -63,11 +66,28 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     address owner,
     address artist,
     address royaltyMultisig,
+    address[] memory _withdrawAddresses,
+    uint256[] memory _withdrawPercentageNumerators,
     string memory _initBaseURI
   ) ERC721(_name, _symbol) Ownable(owner) {
     setBaseURI(_initBaseURI);
 
     _setDefaultRoyalty(royaltyMultisig, 750); // 7.5%
+
+    require(
+      _withdrawAddresses.length == _withdrawPercentageNumerators.length,
+      "withdrawal array lengths do not match"
+    );
+    uint256 sumOfWithdawNumerators = 0;
+    for (uint256 i = 0; i < _withdrawPercentageNumerators.length; i++) {
+      sumOfWithdawNumerators += _withdrawPercentageNumerators[i];
+    }
+    require(
+      sumOfWithdawNumerators == _feeDenominator(),
+      "Withdrawal percentages do not add up to 100%"
+    );
+    withdrawAddresses = _withdrawAddresses;
+    withdrawPercentageNumerators = _withdrawPercentageNumerators;
 
     // Mint first 5 to the artist
     for (uint256 i = 0; i < 5; i++) {
@@ -114,22 +134,23 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     address _to,
     uint256 _mintAmount
   ) public payable inState(TokenState.BirddogCoinHoldersAirdropped) {
-    uint256 supply = totalSupply();
     require(!paused, "Contract is paused");
     require(_mintAmount > 0, "You cannot mint 0 tokens");
     require(_mintAmount <= maxMintAmount, "You are not allowed to buy this many tokens at once");
-    require(supply + _mintAmount <= maxSupply, "Exceeds maximum supply");
+
+    uint256 supply = totalSupply();
+    require(supply + _mintAmount <= MAX_SUPPLY, "Exceeds maximum supply");
+    if (supply + _mintAmount == MAX_SUPPLY) {
+      state = TokenState.Soldout;
+    }
 
     if (msg.sender != owner()) {
       require(msg.value >= cost * _mintAmount);
     }
 
-    for (uint256 i = 1; i <= _mintAmount; i++) {
-      _safeMint(_to, supply + i);
-    }
-
-    if (supply + _mintAmount == maxSupply) {
-      state = TokenState.Soldout;
+    for (uint256 i = 0; i < _mintAmount; i++) {
+      _safeMint(_to, tokenMintCounter);
+      tokenMintCounter++;
     }
   }
 
@@ -178,19 +199,14 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   }
 
   function withdraw() public payable onlyOwner {
-    /**
-     *
-     * This will payout percentages of the contract balance to:
-     * Birddog Memecoin treasury -> 40%
-     * Zlurpee Memecoin treasury -> 40%
-     * Artist -> 10%
-     * Contract Owner -> 10%
-     */
+    require(address(this).balance > 0, "No balance to withdraw");
 
-    // Implement ============================================================
-
-    (bool os, ) = payable(owner()).call{value: address(this).balance}("");
-    require(os);
+    for (uint256 i = 0; i < withdrawAddresses.length; i++) {
+      (bool success, ) = payable(withdrawAddresses[i]).call{
+        value: (address(this).balance * withdrawPercentageNumerators[i]) / _feeDenominator()
+      }("");
+      require(success);
+    }
   }
 
   // ERC721Royalty Override
