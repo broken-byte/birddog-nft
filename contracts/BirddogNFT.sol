@@ -28,9 +28,6 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Royalty.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-// Debugging
-import "hardhat/console.sol";
-
 contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   using Strings for uint256;
 
@@ -201,9 +198,10 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   function withdraw() public payable onlyOwner {
     require(address(this).balance > 0, "No balance to withdraw");
 
+    uint256 balanceToWithdraw = address(this).balance;
     for (uint256 i = 0; i < withdrawAddresses.length; i++) {
       (bool success, ) = payable(withdrawAddresses[i]).call{
-        value: (address(this).balance * withdrawPercentageNumerators[i]) / _feeDenominator()
+        value: (balanceToWithdraw * withdrawPercentageNumerators[i]) / _feeDenominator()
       }("");
       require(success);
     }
@@ -217,7 +215,6 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   }
 
   // ERC721Enumerable Overrides
-
   function _increaseBalance(
     address account,
     uint128 value

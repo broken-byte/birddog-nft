@@ -28,17 +28,6 @@ describe('Birddog NFT', function () {
       await accounts[7].getAddress(),
     ];
 
-    /**
-     * constructor(
-    string memory _name,
-    string memory _symbol,
-    address owner,
-    address artist,
-    address royaltyMultisig,
-    string memory _initBaseURI
-  )
-     */
-
     const contract = await ethers.deployContract('BirddogNFT', [
       BIRDDOG_NFT_NAME, // _name
       BIRDDOG_NFT_SYMBOL, // _symbol
@@ -69,6 +58,24 @@ describe('Birddog NFT', function () {
       birddogHolderRecipients,
       birddogHolderAmounts
     );
+  }
+
+  async function generateMintFundsWithinContractInPrepForWithdrawal(
+    accounts: Signer[],
+    contract: BirddogNFT
+  ): Promise<bigint> {
+    contract.pause(false);
+    const minter = accounts[1];
+    const recipient = await accounts[4].getAddress();
+    const costPerMint = await contract.cost();
+    const mintAmount = 5;
+    const totalCost: bigint = costPerMint * BigInt(mintAmount);
+
+    await contract.connect(minter).mint(recipient, 5, {
+      value: totalCost,
+    });
+
+    return totalCost;
   }
 
   describe('Constructor', function () {
@@ -283,7 +290,7 @@ describe('Birddog NFT', function () {
   });
 
   describe('mint', function () {
-    it('should mint a token', async function () {
+    it('should mint a token for free as the owner', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
       await contract.pause(false);
@@ -294,7 +301,7 @@ describe('Birddog NFT', function () {
       expect(await contract.balanceOf(recipient)).to.equal(1);
     });
 
-    it('should mint multiple tokens', async function () {
+    it('should mint multiple tokens for free as the owner', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
       await contract.pause(false);
@@ -303,6 +310,70 @@ describe('Birddog NFT', function () {
       await contract.mint(recipient, 3);
 
       expect(await contract.balanceOf(recipient)).to.equal(3);
+    });
+
+    it('should cost the appropriate amount of ether when minting  1 token as someone other than the owner', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
+      await contract.pause(false);
+      const minter = accounts[1];
+      const recipient = await accounts[4].getAddress();
+      const costPerMint = await contract.cost();
+      const mintAmount = 1;
+      const totalCost = costPerMint * BigInt(mintAmount);
+      const initialBalance = await ethers.provider.getBalance(await minter.getAddress());
+
+      const tx = await contract.connect(minter).mint(recipient, 1, {
+        value: totalCost,
+      });
+
+      const receipt = await tx.wait();
+      const gasCost: bigint = receipt!!.gasUsed * BigInt(tx.gasPrice);
+
+      const finalBalance = await ethers.provider.getBalance(await minter.getAddress());
+      const expectedFinalBalance = initialBalance - totalCost - gasCost;
+      expect(finalBalance).to.equal(expectedFinalBalance);
+    });
+
+    it('should cost the appropriate amount of ether when minting  several tokens as someone other than the owner', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
+      await contract.pause(false);
+      const minter = accounts[1];
+      const recipient = await accounts[4].getAddress();
+      const costPerMint = await contract.cost();
+      const mintAmount = 3;
+      const totalCost = costPerMint * BigInt(mintAmount);
+      const initialBalance = await ethers.provider.getBalance(await minter.getAddress());
+
+      const tx = await contract.connect(minter).mint(recipient, 3, {
+        value: totalCost,
+      });
+
+      const receipt = await tx.wait();
+      const gasCost: bigint = receipt!!.gasUsed * BigInt(tx.gasPrice);
+
+      const finalBalance = await ethers.provider.getBalance(await minter.getAddress());
+      const expectedFinalBalance = initialBalance - totalCost - gasCost;
+      expect(finalBalance).to.equal(expectedFinalBalance);
+    });
+
+    it('should revert if the minter (who is not the owner) does not send the appropriate amount of ether', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
+      await contract.pause(false);
+      const minter = accounts[1];
+      const recipient = await accounts[4].getAddress();
+      await contract.setCost(ethers.parseEther('0.04'));
+      const costPerMint = await contract.cost();
+      const mintAmount = 1;
+      const totalCost = costPerMint * BigInt(mintAmount);
+
+      await expect(
+        contract.connect(minter).mint(recipient, 1, {
+          value: ethers.parseEther('0.03'),
+        })
+      ).to.be.reverted;
     });
 
     it('should revert if the contract is still paused', async function () {
@@ -343,18 +414,16 @@ describe('Birddog NFT', function () {
     it('should withdraw the funds generated from minting to the predefined addresses at the predefined percentages', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
-      await contract.pause(false);
-      const recipient = await accounts[4].getAddress();
-      const mintAmount = 5;
-      const costPerMint = await contract.cost();
-      const totalAmountOfEtherGenerated = costPerMint * BigInt(mintAmount);
-      await contract.mint(recipient, 5);
+      const totalAmountOfEtherGenerated = await generateMintFundsWithinContractInPrepForWithdrawal(
+        accounts,
+        contract
+      );
       const withdrawAddresses = [
-        await contract.withdrawAddresses(0),
-        await contract.withdrawAddresses(1),
-        await contract.withdrawAddresses(2),
-        await contract.withdrawAddresses(3),
-        await contract.withdrawAddresses(4),
+        await accounts[3].getAddress(),
+        await accounts[4].getAddress(),
+        await accounts[5].getAddress(),
+        await accounts[6].getAddress(),
+        await accounts[7].getAddress(),
       ];
       const withdrawPercentageNumerators = [
         await contract.withdrawPercentageNumerators(0),
@@ -363,8 +432,8 @@ describe('Birddog NFT', function () {
         await contract.withdrawPercentageNumerators(3),
         await contract.withdrawPercentageNumerators(4),
       ];
-      const withdrawAmounts = withdrawPercentageNumerators.map((percentage) => {
-        return (totalAmountOfEtherGenerated * BigInt(percentage)) / BigInt(10000);
+      const expectedWithdrawAmounts = withdrawPercentageNumerators.map((numerator) => {
+        return (totalAmountOfEtherGenerated * BigInt(numerator)) / BigInt(10000);
       });
       const initialBalances = await Promise.all(
         withdrawAddresses.map(async (address) => {
@@ -380,11 +449,11 @@ describe('Birddog NFT', function () {
         })
       );
 
-      expect(finalBalances[0] - initialBalances[0]).to.equal(withdrawAmounts[0]);
-      expect(finalBalances[1] - initialBalances[1]).to.equal(withdrawAmounts[1]);
-      expect(finalBalances[2] - initialBalances[2]).to.equal(withdrawAmounts[2]);
-      expect(finalBalances[3] - initialBalances[3]).to.equal(withdrawAmounts[3]);
-      expect(finalBalances[4] - initialBalances[4]).to.equal(withdrawAmounts[4]);
+      expect(finalBalances[0] - initialBalances[0]).to.equal(expectedWithdrawAmounts[0]);
+      expect(finalBalances[1] - initialBalances[1]).to.equal(expectedWithdrawAmounts[1]);
+      expect(finalBalances[2] - initialBalances[2]).to.equal(expectedWithdrawAmounts[2]);
+      expect(finalBalances[3] - initialBalances[3]).to.equal(expectedWithdrawAmounts[3]);
+      expect(finalBalances[4] - initialBalances[4]).to.equal(expectedWithdrawAmounts[4]);
     });
   });
 });
