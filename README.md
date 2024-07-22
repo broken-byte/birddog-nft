@@ -13,7 +13,7 @@ The NFT collection will have:
 - 3000 [ERC-1155](https://ethereum.org/en/developers/docs/standards/tokens/erc-1155/) unique art pieces of varying degrees of rarity corresponding to traits/backgrounds/skins
 - a premint airdrop to holders of the $BIRDDOG token who participated in the NFT whitelist event in April/June 2024
 - A post airdrop mint page
-- Arist/Creator royalties of 2%
+- Arist/Creator royalties of 7.5%
 - Each NFT makes you elligible to future rewards/airdrops in the Base Boys Club Meta
 
 ## Birddog, the token
@@ -32,4 +32,4 @@ The birddog NFT is a true homage to our favorite Matth Furie Boy's Club characte
 
 ## Token Design
 
-We chose to implement our NFT collection using the [ERC-1155](https://ethereum.org/en/developers/docs/standards/tokens/erc-1155/) standard. We did this standard over the more simple [ERC-721](https://ethereum.org/en/developers/docs/standards/tokens/erc-721/) standard because of our premint and airdrop for $BIRDDOG coin holders. [ERC-1155](https://ethereum.org/en/developers/docs/standards/tokens/erc-1155/) is more efficient for large batch transfers like ours and, despite launching this NFT collection on an efficient chain (Base), we feel that it's always better to ere on the side of efficiency when it comes to smart contract design.
+We chose to implement our NFT collection using the [ERC-721](https://ethereum.org/en/developers/docs/standards/tokens/erc-721/) standard since this was the most widely supported and we didn't feel that the benefits of the newer [ERC-1155](https://ethereum.org/en/developers/docs/standards/tokens/erc-1155/) standard (i.e., efficient batch transfers, fungibility, etc.) justified the increased mental override required to fit tooling to meet the it.

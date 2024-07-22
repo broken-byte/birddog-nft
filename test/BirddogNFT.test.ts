@@ -418,6 +418,13 @@ describe('Birddog NFT', function () {
 
       expect(tokenURI).to.equal(expectedTokenURI);
     });
+
+    it('should revert if the token ID is out of bounds (1 to 3000, inclusive)', async function () {
+      const { contract } = await loadFixture(deployBirddogNFTFixture);
+
+      await expect(contract.tokenURI(0)).to.be.reverted;
+      await expect(contract.tokenURI(3001)).to.be.reverted;
+    });
   });
 
   describe('withdraw', function () {
