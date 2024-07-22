@@ -152,7 +152,7 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   }
 
   function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-    require(tokenId <= 3000, "Token ID invalid");
+    require(tokenId > 0 && tokenId <= 3000, "Token ID invalid");
 
     string memory currentBaseURI = _baseURI();
     return

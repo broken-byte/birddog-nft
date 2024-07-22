@@ -408,6 +408,18 @@ describe('Birddog NFT', function () {
     });
   });
 
+  describe('tokenURI', function () {
+    it('should return the correct token URI for a token ID that has already been minted', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      const tokenID = 1;
+      const expectedTokenURI = `${BASE_URI}${tokenID}.json`;
+
+      const tokenURI = await contract.tokenURI(1);
+
+      expect(tokenURI).to.equal(expectedTokenURI);
+    });
+  });
+
   describe('withdraw', function () {
     it('should withdraw the funds generated from minting to the predefined addresses at the predefined percentages', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
