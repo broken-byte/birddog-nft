@@ -10,6 +10,9 @@ _metadata.json
 !test-assets/images/[0-9]*.png
 !test-assets/json/[0-9]*.json
 
+# Ignore ignition/deployments
+ignition/deployments/
+
 # Mac files system
 .DS_Store
 
