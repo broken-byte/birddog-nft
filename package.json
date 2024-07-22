@@ -26,6 +26,7 @@
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@nomicfoundation/hardhat-verify": "^2.0.8",
     "@pinata/sdk": "^2.1.0",
+    "@types/papaparse": "^5.3.14",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.14.1",
     "ethers": "^6.13.1",
