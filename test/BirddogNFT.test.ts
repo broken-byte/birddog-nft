@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { BirddogNFT } from '../typechain-types';
 import {
-  IPFS_HASH,
+  BASE_URI,
   BIRDDOG_NFT_NAME,
   BIRDDOG_NFT_SYMBOL,
   WITHDRAWAL_ALLOCATION_PERCENTAGE_NUMERATORS,
@@ -19,7 +19,6 @@ describe('Birddog NFT', function () {
     const ownerAddress = await accounts[0].getAddress();
     const artistAddress = await accounts[1].getAddress();
     const royaltyMultisigAddress = await accounts[2].getAddress();
-    const baseUri = `ipfs://${IPFS_HASH}/`;
     const withdrawAddresses = [
       await accounts[3].getAddress(),
       await accounts[4].getAddress(),
@@ -36,7 +35,7 @@ describe('Birddog NFT', function () {
       royaltyMultisigAddress, // royaltyMultisig
       withdrawAddresses, // _withdrawAddresses
       WITHDRAWAL_ALLOCATION_PERCENTAGE_NUMERATORS, // _withdrawalAllocationPercentageNumerators
-      baseUri, // _initBaseURI
+      BASE_URI, // _initBaseURI
     ]);
 
     await contract.waitForDeployment();
@@ -153,9 +152,8 @@ describe('Birddog NFT', function () {
 
     it('should set the base URI', async function () {
       const { contract } = await loadFixture(deployBirddogNFTFixture);
-      const baseUri = `ipfs://${IPFS_HASH}/`;
 
-      expect(await contract.baseURI()).to.equal(baseUri);
+      expect(await contract.baseURI()).to.equal(BASE_URI);
     });
 
     it('should set the token state to launched', async function () {
