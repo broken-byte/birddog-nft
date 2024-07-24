@@ -192,7 +192,6 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     cost = _newCost;
   }
 
-  // Changed from Hashlips
   function setMaxMintAmount(uint256 _newmaxMintAmount) public onlyOwner {
     maxMintAmount = _newmaxMintAmount;
   }
