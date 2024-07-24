@@ -8,6 +8,7 @@ import {
   WITHDRAWAL_ADDRESSES,
   WITHDRAWAL_ALLOCATION_PERCENTAGE_NUMERATORS,
   ROYALTY_MULTISIG,
+  COLLECTION_LEVEL_BASE_URI,
 } from '../../Constants';
 import { parseCSV } from '../../airdrop/parseCsvAirdropList';
 
@@ -22,6 +23,7 @@ const BirddogNFTModule = buildModule('BirddogNFT', (m) => {
     WITHDRAWAL_ADDRESSES, // _withdrawalAddresses
     WITHDRAWAL_ALLOCATION_PERCENTAGE_NUMERATORS, // _withdrawalAllocationPercentageNumerators
     BASE_URI, // initBaseURI
+    COLLECTION_LEVEL_BASE_URI, // _collectionBaseURI
   ]);
 
   // 2. Parse the airdrop CSV and extract the participants and how many tokens they should receive.

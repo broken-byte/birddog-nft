@@ -41,7 +41,8 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   TokenState public state = TokenState.Default;
   string public baseURI;
   string public collectionBaseURI;
-  string public baseExtension = ".json";
+  string public metadataExtension = ".json";
+  string public contractMetadataFileName = "birddog-nft";
   uint256 public cost = 0.04 ether;
 
   uint256 public constant MAX_SUPPLY = 3000;
@@ -160,7 +161,7 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     string memory currentBaseURI = _baseURI();
     return
       bytes(currentBaseURI).length > 0
-        ? string(abi.encodePacked(currentBaseURI, tokenId.toString(), baseExtension))
+        ? string(abi.encodePacked(currentBaseURI, tokenId.toString(), metadataExtension))
         : "";
   }
 
@@ -168,7 +169,9 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     string memory currentCollectionBaseURI = collectionBaseURI;
     return
       bytes(currentCollectionBaseURI).length > 0
-        ? string(abi.encodePacked(currentCollectionBaseURI, "birddog-nft", baseExtension))
+        ? string(
+          abi.encodePacked(currentCollectionBaseURI, contractMetadataFileName, metadataExtension)
+        )
         : "";
   }
 
@@ -202,8 +205,8 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     collectionBaseURI = _newCollectionBaseURI;
   }
 
-  function setBaseExtension(string memory _newBaseExtension) public onlyOwner {
-    baseExtension = _newBaseExtension;
+  function setMetadataExtension(string memory _newMetadataExtension) public onlyOwner {
+    metadataExtension = _newMetadataExtension;
   }
 
   function pause(bool _state) public onlyOwner {

@@ -5,6 +5,7 @@ import { loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
 import { BirddogNFT } from '../typechain-types';
 import {
   BASE_URI,
+  COLLECTION_LEVEL_BASE_URI,
   BIRDDOG_NFT_NAME,
   BIRDDOG_NFT_SYMBOL,
   WITHDRAWAL_ALLOCATION_PERCENTAGE_NUMERATORS,
@@ -36,6 +37,7 @@ describe('Birddog NFT', function () {
       withdrawAddresses, // _withdrawAddresses
       WITHDRAWAL_ALLOCATION_PERCENTAGE_NUMERATORS, // _withdrawalAllocationPercentageNumerators
       BASE_URI, // _initBaseURI
+      COLLECTION_LEVEL_BASE_URI, // _collectionBaseURI
     ]);
 
     await contract.waitForDeployment();
@@ -222,13 +224,13 @@ describe('Birddog NFT', function () {
   });
 
   describe('setBaseExtension', function () {
-    it('should set the base extension', async function () {
+    it('should set the metadata extension', async function () {
       const { contract } = await loadFixture(deployBirddogNFTFixture);
       const newBaseExtension = '.yaml';
 
-      await contract.setBaseExtension(newBaseExtension);
+      await contract.setMetadataExtension(newBaseExtension);
 
-      expect(await contract.baseExtension()).to.equal(newBaseExtension);
+      expect(await contract.metadataExtension()).to.equal(newBaseExtension);
     });
   });
 
@@ -424,6 +426,17 @@ describe('Birddog NFT', function () {
 
       await expect(contract.tokenURI(0)).to.be.reverted;
       await expect(contract.tokenURI(3001)).to.be.reverted;
+    });
+  });
+
+  describe('contractURI', function () {
+    it('should return the correct contract URI', async function () {
+      const { contract } = await loadFixture(deployBirddogNFTFixture);
+      const expectedContractURI = `${COLLECTION_LEVEL_BASE_URI}birddog-nft.json`;
+
+      const contractURI = await contract.contractURI();
+      console.log('contractURI: ', contractURI);
+      expect(contractURI).to.equal(expectedContractURI);
     });
   });
 

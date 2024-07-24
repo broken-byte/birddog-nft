@@ -9,6 +9,7 @@ import {
   ROYALTY_MULTISIG,
   AIRDROP_TEST_PARTICIPANTS,
   AIRDROP_TEST_MINT_AMOUNTS,
+  COLLECTION_LEVEL_BASE_URI,
 } from '../../Constants';
 
 const BirddogNFTModule = buildModule('BirddogNFT', (m) => {
@@ -22,6 +23,7 @@ const BirddogNFTModule = buildModule('BirddogNFT', (m) => {
     WITHDRAWAL_ADDRESSES, // _withdrawalAddresses
     WITHDRAWAL_ALLOCATION_PERCENTAGE_NUMERATORS, // _withdrawalAllocationPercentageNumerators
     BASE_URI, // initBaseURI
+    COLLECTION_LEVEL_BASE_URI, // _collectionBaseURI
   ]);
 
   // 2. Call the airdrop function on the contract with the participants and mint amounts.
