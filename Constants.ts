@@ -2,7 +2,7 @@ export const BIRDDOG_NFT_NAME = 'BirdDog: The NFT';
 export const BIRDDOG_NFT_SYMBOL = 'BDOG';
 
 export const IPFS_HASH = 'Qmb9uEcioFv23uRkwXpVpcmU1RqhbNeGxwty2yNAauTwxg';
-export const COLLECTION_LEVEL_IPFS_HASH = 'QmQwTW8mbyGDSAbxpgij5AHTHd89RuYkdtZBzfwj9sHqH4';
+export const COLLECTION_LEVEL_IPFS_HASH = 'QmTgvVUeiD16WNpYdf3oQ4XJLJ5gkqVXKrq9ygzECk9nG8';
 // URI for individual token id metadata
 export const BASE_URI = `ipfs://${IPFS_HASH}/`;
 // URI for collection level metadata
