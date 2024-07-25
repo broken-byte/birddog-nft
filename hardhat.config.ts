@@ -48,6 +48,7 @@ const config: HardhatUserConfig = {
     L1Etherscan: ETHERSCAN_API_KEY,
     L2Etherscan: BASESCAN_BASED_WHALE_API_KEY,
     darkMode: true,
+    enabled: false,
   },
 };
 
