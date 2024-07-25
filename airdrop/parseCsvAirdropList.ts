@@ -17,12 +17,7 @@ export const parseCSV = (filePath: string): Promise<AirdropParticipant[]> => {
       complete: (result: Papa.ParseResult<AirdropParticipant>) => {
         const filteredData = result.data
           .filter((row) => {
-            console.log('Row.Addresses before filtering: ', row.Addresses);
-            console.log('Row.MintAmount before filtering: ', row.MintAmount);
-            console.log('==============================');
-            // Ensure Addresses is not 'null'
             const isAddressValid = row.Addresses !== '';
-            // Check if MintAmount is numeric and not '0'
             const isMintAmountValid =
               !isNaN(Number(row.MintAmount)) && Number(row.MintAmount) !== 0;
 
@@ -42,19 +37,36 @@ export const parseCSV = (filePath: string): Promise<AirdropParticipant[]> => {
 };
 
 const filePath = './airdrop/airdrop.csv';
+let participants: string[] = [];
+let mintAmounts: number[] = [];
 parseCSV(filePath)
-  .then((participants) => {
-    console.log('Parsed Participants:', participants);
-    console.log('==============================');
-    console.log('Count: ', participants.length);
-
-    let sum = 0;
-    participants.map((participant) => {
-      sum += participant.MintAmount;
+  .then((participantData) => {
+    participantData.map((participantDatum) => {
+      participants.push(participantDatum.Addresses);
+      mintAmounts.push(participantDatum.MintAmount);
     });
 
-    console.log('Total Mint Amount: ', sum);
+    console.log('Participants:', participants);
+    console.log('Mint Amounts:', mintAmounts);
   })
   .catch((error) => {
     console.error('Error parsing CSV:', error);
   });
+
+// const filePath = './airdrop/airdrop.csv';
+// parseCSV(filePath)
+//   .then((participants) => {
+//     console.log('Parsed Participants:', participants);
+//     console.log('==============================');
+//     console.log('Count: ', participants.length);
+
+//     let sum = 0;
+//     participants.map((participant) => {
+//       sum += participant.MintAmount;
+//     });
+
+//     console.log('Total Mint Amount: ', sum);
+//   })
+//   .catch((error) => {
+//     console.error('Error parsing CSV:', error);
+//   });
