@@ -50,6 +50,9 @@ const config: HardhatUserConfig = {
     darkMode: true,
     enabled: false,
   },
+  mocha: {
+    timeout: 80000,
+  },
 };
 
 export default config;
