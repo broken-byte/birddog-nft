@@ -10,6 +10,7 @@ import {
   BIRDDOG_NFT_SYMBOL,
   WITHDRAWAL_ALLOCATION_PERCENTAGE_NUMERATORS,
 } from '../Constants';
+import { parseCSV } from '../airdrop/parseCsvAirdropList';
 
 describe('Birddog NFT', function () {
   async function deployBirddogNFTFixture(): Promise<{
@@ -156,11 +157,6 @@ describe('Birddog NFT', function () {
       const { contract } = await loadFixture(deployBirddogNFTFixture);
 
       expect(await contract.baseURI()).to.equal(BASE_URI);
-    });
-
-    it('should set the token state to launched', async function () {
-      const { contract } = await loadFixture(deployBirddogNFTFixture);
-      expect(await contract.state()).to.equal(1); // Launched;
     });
 
     it('should have defaulted to a 0.04 ETH cost per token mint', async function () {
@@ -435,7 +431,6 @@ describe('Birddog NFT', function () {
       const expectedContractURI = `${COLLECTION_LEVEL_BASE_URI}birddog-nft.json`;
 
       const contractURI = await contract.contractURI();
-      console.log('contractURI: ', contractURI);
       expect(contractURI).to.equal(expectedContractURI);
     });
   });

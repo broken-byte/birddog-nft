@@ -31,14 +31,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   using Strings for uint256;
 
-  // States for the contract
-  enum TokenState {
-    Default,
-    Launched,
-    BirddogCoinHoldersAirdropped,
-    Soldout
-  }
-  TokenState public state = TokenState.Default;
   string public baseURI;
   string public collectionBaseURI;
   string public metadataExtension = ".json";
@@ -50,14 +42,10 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   uint256 public maxMintAmount = 5;
   uint256 public tokenMintCounter = 1;
   bool public paused = true;
+  bool public isSoldOut = false;
 
   address[] public withdrawAddresses;
   uint256[] public withdrawPercentageNumerators;
-
-  modifier inState(TokenState _state) {
-    require(_state == state, "Function cannot be called in this state");
-    _;
-  }
 
   constructor(
     string memory _name,
@@ -98,15 +86,12 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
 
     _safeMint(artist, 37); // Reserve token #37 for artist
     _safeMint(artist, 1248); // Reserve token #1248 for artist
-
-    state = TokenState.Launched;
   }
 
   function airdropToBirdDogMemecoinParticipants(
     address[] memory recipients,
     uint256[] memory recipientAmounts
-  ) public onlyOwner inState(TokenState.Launched) {
-    require(state == TokenState.Launched, "Token is not in Launched state");
+  ) public onlyOwner {
     require(recipients.length == recipientAmounts.length, "Array lengths do not match");
 
     for (uint256 i = 0; i < recipients.length; i++) {
@@ -122,8 +107,6 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
         tokenMintCounter++;
       }
     }
-
-    state = TokenState.BirddogCoinHoldersAirdropped;
   }
 
   function alreadyMinted(uint256 tokenId) private view returns (bool) {
@@ -131,10 +114,7 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     return _ownerOf(tokenId) != address(0);
   }
 
-  function mint(
-    address _to,
-    uint256 _mintAmount
-  ) public payable inState(TokenState.BirddogCoinHoldersAirdropped) {
+  function mint(address _to, uint256 _mintAmount) public payable {
     require(!paused, "Contract is paused");
     require(_mintAmount > 0, "You cannot mint 0 tokens");
     require(_mintAmount <= maxMintAmount, "You are not allowed to buy this many tokens at once");
@@ -142,7 +122,7 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     uint256 supply = totalSupply();
     require(supply + _mintAmount <= MAX_SUPPLY, "Exceeds maximum supply");
     if (supply + _mintAmount == MAX_SUPPLY) {
-      state = TokenState.Soldout;
+      isSoldOut = true;
     }
 
     if (msg.sender != owner()) {
