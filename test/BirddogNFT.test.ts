@@ -10,7 +10,6 @@ import {
   BIRDDOG_NFT_SYMBOL,
   WITHDRAWAL_ALLOCATION_PERCENTAGE_NUMERATORS,
 } from '../Constants';
-import { parseCSV } from '../airdrop/parseCsvAirdropList';
 
 describe('Birddog NFT', function () {
   async function deployBirddogNFTFixture(): Promise<{
