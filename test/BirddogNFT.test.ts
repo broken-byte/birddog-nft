@@ -46,22 +46,6 @@ describe('Birddog NFT', function () {
     return { accounts, contract };
   }
 
-  async function callBirdDogMemeCoinAirdropFunctionToMoveStateForward(
-    accounts: Signer[],
-    contract: BirddogNFT
-  ) {
-    const birddogHolderRecipients: string[] = [
-      await accounts[2].getAddress(),
-      await accounts[3].getAddress(),
-    ];
-    const birddogHolderAmounts: number[] = [2, 4];
-
-    await contract.airdropToBirdDogMemecoinParticipants(
-      birddogHolderRecipients,
-      birddogHolderAmounts
-    );
-  }
-
   async function generateMintFundsWithinContractInPrepForWithdrawal(
     accounts: Signer[],
     contract: BirddogNFT
@@ -269,7 +253,7 @@ describe('Birddog NFT', function () {
       }
     });
 
-    it('should mint and airdrop NFTs to the actual list of participants then planned in the Birddog coin holder NFT giveaway, (gas profiler)', async function () {
+    it('should mint and airdrop NFTs to the actual list of participants in the Birddog coin holder NFT giveaway, (gas profiler)', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       const filePath = './airdrop/airdrop.csv';
       const airdropData = await parseCSV(filePath);
@@ -320,6 +304,19 @@ describe('Birddog NFT', function () {
         contract
           .connect(accounts[1])
           .airdropToBirdDogMemecoinParticipants(birddogHolderRecipients, birddogHolderAmounts)
+      ).to.be.reverted;
+    });
+
+    it('should revert if the array lengths of the recipients and amounts are not equal', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      const birddogHolderRecipients: string[] = [
+        await accounts[2].getAddress(),
+        await accounts[3].getAddress(),
+      ];
+      const birddogHolderAmounts: number[] = [2, 4, 3];
+
+      await expect(
+        contract.airdropToBirdDogMemecoinParticipants(birddogHolderRecipients, birddogHolderAmounts)
       ).to.be.reverted;
     });
   });
