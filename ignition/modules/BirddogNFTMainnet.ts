@@ -39,11 +39,7 @@ const BirddogNFTModule = buildModule('BirddogNFT', (m) => {
         mintAmounts.push(participantDatum.MintAmount);
       });
 
-      // 3. Wait for 5 blocks
-      let currentBlock = await ethers.provider.getBlockNumber();
-      while (currentBlock + 5 > (await ethers.provider.getBlockNumber())) {}
-
-      // 4. Call the airdrop function on the contract with the participants and mint amounts.
+      // 3. Call the airdrop function on the contract with the participants and mint amounts.
       const airdropCall = m.call(birddogNFT, 'airdropToBirdDogMemecoinParticipants', [
         participants,
         mintAmounts,
