@@ -13,7 +13,7 @@ import {
 } from '../../Constants';
 
 const BirddogNFTModule = buildModule('BirddogNFT', (m) => {
-  // 1. Deploy contract
+  // 1. Deploy contract with dummy artist address (engineer instead of artist)
   const birddogNFT = m.contract('BirddogNFT', [
     BIRDDOG_NFT_NAME, // name
     BIRDDOG_NFT_SYMBOL, // symbol
@@ -24,12 +24,6 @@ const BirddogNFTModule = buildModule('BirddogNFT', (m) => {
     WITHDRAWAL_ALLOCATION_PERCENTAGE_NUMERATORS, // _withdrawalAllocationPercentageNumerators
     BASE_URI, // initBaseURI
     COLLECTION_LEVEL_BASE_URI, // _collectionBaseURI
-  ]);
-
-  // 2. Call the airdrop function on the contract with the participants and mint amounts.
-  m.call(birddogNFT, 'airdropToBirdDogMemecoinParticipants', [
-    AIRDROP_TEST_PARTICIPANTS,
-    AIRDROP_TEST_MINT_AMOUNTS,
   ]);
 
   return { birddogNFT };
