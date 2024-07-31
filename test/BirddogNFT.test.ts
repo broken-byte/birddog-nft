@@ -10,6 +10,7 @@ import {
   BIRDDOG_NFT_SYMBOL,
   WITHDRAWAL_ALLOCATION_PERCENTAGE_NUMERATORS,
 } from '../Constants';
+import { parseCSV } from '../airdrop/parseCsvAirdropList';
 
 describe('Birddog NFT', function () {
   async function deployBirddogNFTFixture(): Promise<{
@@ -240,7 +241,7 @@ describe('Birddog NFT', function () {
   });
 
   describe('airdropToBirdDogMemecoinParticipants', function () {
-    it('should mint and airdrop NFTs to participants in the Birddog coin holder NFT giveaway', async function () {
+    it('should mint and airdrop NFTs to a smaller list of participants then planned in the Birddog coin holder NFT giveaway', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       const birddogHolderRecipients: string[] = [
         await accounts[2].getAddress(),
@@ -266,6 +267,45 @@ describe('Birddog NFT', function () {
           birddogHolderAmounts[i]
         );
       }
+    });
+
+    it('should mint and airdrop NFTs to the actual list of participants then planned in the Birddog coin holder NFT giveaway, (gas profiler)', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      const filePath = './airdrop/airdrop.csv';
+      const airdropData = await parseCSV(filePath);
+      let birddogHolderRecipients: string[] = [];
+      let birddogHolderAmounts: number[] = [];
+
+      let uniqueAddressesToMintCountMap: Map<string, number> = new Map();
+
+      airdropData.map((participantDatum: any) => {
+        birddogHolderRecipients.push(participantDatum.Addresses);
+        birddogHolderAmounts.push(participantDatum.MintAmount);
+
+        if (uniqueAddressesToMintCountMap.has(participantDatum.Addresses)) {
+          const currentAmount: number = uniqueAddressesToMintCountMap.get(
+            participantDatum.Addresses
+          )!;
+          uniqueAddressesToMintCountMap.set(
+            participantDatum.Addresses,
+            currentAmount + participantDatum.MintAmount
+          );
+        } else {
+          uniqueAddressesToMintCountMap.set(
+            participantDatum.Addresses,
+            participantDatum.MintAmount
+          );
+        }
+      });
+
+      await contract.airdropToBirdDogMemecoinParticipants(
+        birddogHolderRecipients,
+        birddogHolderAmounts
+      );
+
+      uniqueAddressesToMintCountMap.forEach(async (mintedAmount, address) => {
+        expect(await contract.balanceOf(address)).to.equal(mintedAmount);
+      });
     });
 
     it('should revert if the sender is not the owner', async function () {
