@@ -175,7 +175,7 @@ describe('Birddog NFT', function () {
 
     it('should have moved the token mint counter to 6 since the token counter rests on the next token to be minted', async function () {
       const { contract } = await loadFixture(deployBirddogNFTFixture);
-      expect(await contract.tokenMintCounter()).to.equal(6);
+      expect(await contract.sequentialMintCounter()).to.equal(6);
     });
 
     it('should have defaulted to paused', async function () {
@@ -287,7 +287,6 @@ describe('Birddog NFT', function () {
   describe('mint', function () {
     it('should mint a token for free as the owner', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
-      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
       await contract.pause(false);
       const recipient = await accounts[4].getAddress();
 
@@ -298,7 +297,6 @@ describe('Birddog NFT', function () {
 
     it('should mint multiple tokens for free as the owner', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
-      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
       await contract.pause(false);
       const recipient = await accounts[4].getAddress();
 
@@ -309,7 +307,6 @@ describe('Birddog NFT', function () {
 
     it('should cost the appropriate amount of ether when minting  1 token as someone other than the owner', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
-      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
       await contract.pause(false);
       const minter = accounts[1];
       const recipient = await accounts[4].getAddress();
@@ -324,7 +321,6 @@ describe('Birddog NFT', function () {
 
       const receipt = await tx.wait();
       const gasCost: bigint = receipt!!.gasUsed * BigInt(tx.gasPrice);
-
       const finalBalance = await ethers.provider.getBalance(await minter.getAddress());
       const expectedFinalBalance = initialBalance - totalCost - gasCost;
       expect(finalBalance).to.equal(expectedFinalBalance);
@@ -332,7 +328,6 @@ describe('Birddog NFT', function () {
 
     it('should cost the appropriate amount of ether when minting  several tokens as someone other than the owner', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
-      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
       await contract.pause(false);
       const minter = accounts[1];
       const recipient = await accounts[4].getAddress();
@@ -347,15 +342,27 @@ describe('Birddog NFT', function () {
 
       const receipt = await tx.wait();
       const gasCost: bigint = receipt!!.gasUsed * BigInt(tx.gasPrice);
-
       const finalBalance = await ethers.provider.getBalance(await minter.getAddress());
       const expectedFinalBalance = initialBalance - totalCost - gasCost;
       expect(finalBalance).to.equal(expectedFinalBalance);
     });
 
+    it('should move the token counter appropriately when minting', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      await contract.pause(false);
+      const recipient = await accounts[4].getAddress();
+      const sequentialMintSoFarFromConstructorAllocations = 5;
+
+      await contract.mint(recipient, 5);
+
+      // +1 because token mint counter rests on the next token to be minted
+      expect(await contract.sequentialMintCounter()).to.equal(
+        5 + sequentialMintSoFarFromConstructorAllocations + 1
+      );
+    });
+
     it('should revert if the minter (who is not the owner) does not send the appropriate amount of ether', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
-      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
       await contract.pause(false);
       const minter = accounts[1];
       const recipient = await accounts[4].getAddress();
@@ -373,35 +380,48 @@ describe('Birddog NFT', function () {
 
     it('should revert if the contract is still paused', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
-      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
       await contract.pause(true);
       const recipient = await accounts[4].getAddress();
 
       await expect(contract.mint(recipient, 1)).to.be.reverted;
     });
 
-    it('should revert if the contract has not airdropped to BirdDog Memecoin participants', async function () {
+    it('should revert if the mint amount is greater than the max mint amount', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await contract.pause(false);
       const recipient = await accounts[4].getAddress();
+      await contract.setMaxMintAmount(3);
 
-      await expect(contract.mint(recipient, 1)).to.be.reverted;
+      await expect(contract.mint(recipient, 4)).to.be.reverted;
     });
 
-    it('should move the token counter appropriately when minting', async function () {
+    it('should revert if the mint amount is greater than the max supply (constant at 3000)', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
-      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
       await contract.pause(false);
       const recipient = await accounts[4].getAddress();
-      const mintCountSoFarFromConstructorAllocations = 5;
-      const mintCountSoFarFromAirdrop = 6;
+      await contract.setMaxMintAmount(3001);
 
-      await contract.mint(recipient, 5);
+      await expect(contract.mint(recipient, 3001)).to.be.reverted;
+    });
 
-      // +1 because token mint counter rests on the next token to be minted
-      expect(await contract.tokenMintCounter()).to.equal(
-        5 + mintCountSoFarFromConstructorAllocations + mintCountSoFarFromAirdrop + 1
-      );
+    it('should revert if the token id is out of bounds (1 to 3000, inclusive)', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      await contract.pause(false);
+      const recipient = await accounts[4].getAddress();
+
+      await expect(contract.mint(recipient, 0)).to.be.reverted;
+      await expect(contract.mint(recipient, 3001)).to.be.reverted;
+    });
+
+    it('should move the total supply forward when minting', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      await contract.pause(false);
+      const recipient = await accounts[4].getAddress();
+      const mintCountSoFarFromConstructorAllocations = 7;
+
+      await contract.mint(recipient, 1);
+
+      expect(await contract.totalSupply()).to.equal(1 + mintCountSoFarFromConstructorAllocations);
     });
   });
 
@@ -437,7 +457,6 @@ describe('Birddog NFT', function () {
   describe('withdraw', function () {
     it('should withdraw the funds generated from minting to the predefined addresses at the predefined percentages', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
-      await callBirdDogMemeCoinAirdropFunctionToMoveStateForward(accounts, contract);
       const totalAmountOfEtherGenerated = await generateMintFundsWithinContractInPrepForWithdrawal(
         accounts,
         contract

@@ -28,7 +28,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Royalty.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
+contract BirddogNFT is ERC721Royalty, Ownable {
   using Strings for uint256;
 
   string public baseURI;
@@ -38,9 +38,10 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
   uint256 public cost = 0.04 ether;
 
   uint256 public constant MAX_SUPPLY = 3000;
+  uint256 public totalSupply = 0;
 
   uint256 public maxMintAmount = 5;
-  uint256 public tokenMintCounter = 1;
+  uint256 public sequentialMintCounter = 1;
   bool public paused = true;
   bool public isSoldOut = false;
 
@@ -80,12 +81,20 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
 
     // Mint first 5 to the artist
     for (uint256 i = 0; i < 5; i++) {
-      _safeMint(artist, tokenMintCounter);
-      tokenMintCounter++;
+      _safeMint(artist, sequentialMintCounter, "" /* data */);
+      sequentialMintCounter++;
     }
 
-    _safeMint(artist, 37); // Reserve token #37 for artist
-    _safeMint(artist, 1248); // Reserve token #1248 for artist
+    // We don't move the sequentialMintCounter here because we are minting out of order.
+    // mint() will take this into account with an 'alreadyMinted' check
+    _safeMint(artist, 37, "" /* data */); // Reserve token #37 for artist
+    _safeMint(artist, 1248, "" /* data */); // Reserve token #1248 for artist
+  }
+
+  function _safeMint(address to, uint256 tokenId, bytes memory data) internal virtual override {
+    require(1 <= tokenId && tokenId <= MAX_SUPPLY, "Token ID invalid");
+    super._safeMint(to, tokenId, data);
+    totalSupply++;
   }
 
   function airdropToBirdDogMemecoinParticipants(
@@ -99,12 +108,12 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
       require(mintAmount <= maxMintAmount, "Mint amount exceeds max mint amount");
 
       for (uint j = 0; j < mintAmount; j++) {
-        if (alreadyMinted(tokenMintCounter)) {
-          tokenMintCounter++;
+        if (alreadyMinted(sequentialMintCounter)) {
+          sequentialMintCounter++;
         }
 
-        _safeMint(recipients[i], tokenMintCounter);
-        tokenMintCounter++;
+        _safeMint(recipients[i], sequentialMintCounter, "" /* data */);
+        sequentialMintCounter++;
       }
     }
   }
@@ -119,9 +128,8 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     require(_mintAmount > 0, "You cannot mint 0 tokens");
     require(_mintAmount <= maxMintAmount, "You are not allowed to buy this many tokens at once");
 
-    uint256 supply = totalSupply();
-    require(supply + _mintAmount <= MAX_SUPPLY, "Exceeds maximum supply");
-    if (supply + _mintAmount == MAX_SUPPLY) {
+    require(totalSupply + _mintAmount <= MAX_SUPPLY, "Exceeds maximum supply");
+    if (totalSupply + _mintAmount == MAX_SUPPLY) {
       isSoldOut = true;
     }
 
@@ -130,8 +138,8 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
     }
 
     for (uint256 i = 0; i < _mintAmount; i++) {
-      _safeMint(_to, tokenMintCounter);
-      tokenMintCounter++;
+      _safeMint(_to, sequentialMintCounter, "" /* data */);
+      sequentialMintCounter++;
     }
   }
 
@@ -157,15 +165,6 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
 
   function _baseURI() internal view virtual override returns (string memory) {
     return baseURI;
-  }
-
-  function getTokensOwnedByAddress(address _address) public view returns (uint256[] memory) {
-    uint256 ownerTokenCount = balanceOf(_address);
-    uint256[] memory tokenIds = new uint256[](ownerTokenCount);
-    for (uint256 i; i < ownerTokenCount; i++) {
-      tokenIds[i] = tokenOfOwnerByIndex(_address, i);
-    }
-    return tokenIds;
   }
 
   function setCost(uint256 _newCost) public onlyOwner {
@@ -202,28 +201,5 @@ contract BirddogNFT is ERC721Enumerable, ERC721Royalty, Ownable {
       }("");
       require(success);
     }
-  }
-
-  // ERC721Royalty Override
-  function supportsInterface(
-    bytes4 interfaceId
-  ) public view virtual override(ERC721Enumerable, ERC721Royalty) returns (bool) {
-    return super.supportsInterface(interfaceId);
-  }
-
-  // ERC721Enumerable Overrides
-  function _increaseBalance(
-    address account,
-    uint128 value
-  ) internal virtual override(ERC721, ERC721Enumerable) {
-    super._increaseBalance(account, value);
-  }
-
-  function _update(
-    address to,
-    uint256 tokenId,
-    address auth
-  ) internal virtual override(ERC721, ERC721Enumerable) returns (address) {
-    return super._update(to, tokenId, auth);
   }
 }
