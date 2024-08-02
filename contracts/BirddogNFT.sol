@@ -121,7 +121,7 @@ contract BirddogNFT is ERC721Royalty, Ownable {
     return _ownerOf(tokenId) != address(0);
   }
 
-  function mint(address _to, uint256 _mintAmount) public payable {
+  function mint(uint256 _mintAmount) public payable {
     require(!paused, "Contract is paused");
     require(_mintAmount > 0, "You cannot mint 0 tokens");
     require(_mintAmount <= maxMintAmount, "You are not allowed to buy this many tokens at once");
@@ -136,7 +136,7 @@ contract BirddogNFT is ERC721Royalty, Ownable {
     }
 
     for (uint256 i = 0; i < _mintAmount; i++) {
-      _safeMint(_to, sequentialMintCounter, "" /* data */);
+      _safeMint(msg.sender, sequentialMintCounter, "" /* data */);
       sequentialMintCounter++;
     }
   }

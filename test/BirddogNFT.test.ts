@@ -51,13 +51,12 @@ describe('Birddog NFT', function () {
     contract: BirddogNFT
   ): Promise<bigint> {
     contract.pause(false);
-    const minter = accounts[1];
-    const recipient = await accounts[4].getAddress();
+    const minter = accounts[4];
     const costPerMint = await contract.cost();
     const mintAmount = 5;
     const totalCost: bigint = costPerMint * BigInt(mintAmount);
 
-    await contract.connect(minter).mint(recipient, 5, {
+    await contract.connect(minter).mint(5, {
       value: totalCost,
     });
 
@@ -324,41 +323,41 @@ describe('Birddog NFT', function () {
   describe('mint', function () {
     it('should mint a token for free as the owner', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      const owner = await accounts[0].getAddress(); // Sender is the owner by default, this is just to get our own balance.
       await contract.pause(false);
-      const recipient = await accounts[4].getAddress();
 
-      await contract.mint(recipient, 1);
+      await contract.mint(1);
 
-      expect(await contract.balanceOf(recipient)).to.equal(1);
+      expect(await contract.balanceOf(owner)).to.equal(1);
     });
 
     it('should mint multiple tokens for free as the owner', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      const owner = await accounts[0].getAddress(); // Sender is the owner by default, this is just to get our own balance.
       await contract.pause(false);
-      const recipient = await accounts[4].getAddress();
 
-      await contract.mint(recipient, 3);
+      await contract.mint(3);
 
-      expect(await contract.balanceOf(recipient)).to.equal(3);
+      expect(await contract.balanceOf(owner)).to.equal(3);
     });
 
     it('should cost the appropriate amount of ether when minting  1 token as someone other than the owner', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await contract.pause(false);
-      const minter = accounts[1];
-      const recipient = await accounts[4].getAddress();
+      const minter = accounts[4];
+      const minterAddress = await accounts[4].getAddress();
       const costPerMint = await contract.cost();
       const mintAmount = 1;
       const totalCost = costPerMint * BigInt(mintAmount);
-      const initialBalance = await ethers.provider.getBalance(await minter.getAddress());
+      const initialBalance = await ethers.provider.getBalance(minter);
 
-      const tx = await contract.connect(minter).mint(recipient, 1, {
+      const tx = await contract.connect(minter).mint(1, {
         value: totalCost,
       });
 
       const receipt = await tx.wait();
       const gasCost: bigint = receipt!!.gasUsed * BigInt(tx.gasPrice);
-      const finalBalance = await ethers.provider.getBalance(await minter.getAddress());
+      const finalBalance = await ethers.provider.getBalance(minter);
       const expectedFinalBalance = initialBalance - totalCost - gasCost;
       expect(finalBalance).to.equal(expectedFinalBalance);
     });
@@ -366,20 +365,20 @@ describe('Birddog NFT', function () {
     it('should cost the appropriate amount of ether when minting  several tokens as someone other than the owner', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await contract.pause(false);
-      const minter = accounts[1];
-      const recipient = await accounts[4].getAddress();
+      const minter = accounts[4];
+      const minterAddress = await accounts[4].getAddress();
       const costPerMint = await contract.cost();
       const mintAmount = 3;
       const totalCost = costPerMint * BigInt(mintAmount);
-      const initialBalance = await ethers.provider.getBalance(await minter.getAddress());
+      const initialBalance = await ethers.provider.getBalance(minterAddress);
 
-      const tx = await contract.connect(minter).mint(recipient, 3, {
+      const tx = await contract.connect(minter).mint(3, {
         value: totalCost,
       });
 
       const receipt = await tx.wait();
       const gasCost: bigint = receipt!!.gasUsed * BigInt(tx.gasPrice);
-      const finalBalance = await ethers.provider.getBalance(await minter.getAddress());
+      const finalBalance = await ethers.provider.getBalance(minterAddress);
       const expectedFinalBalance = initialBalance - totalCost - gasCost;
       expect(finalBalance).to.equal(expectedFinalBalance);
     });
@@ -387,10 +386,9 @@ describe('Birddog NFT', function () {
     it('should move the token counter appropriately when minting', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await contract.pause(false);
-      const recipient = await accounts[4].getAddress();
       const sequentialMintSoFarFromConstructorAllocations = 5;
 
-      await contract.mint(recipient, 5);
+      await contract.mint(5);
 
       // +1 because token mint counter rests on the next token to be minted
       expect(await contract.sequentialMintCounter()).to.equal(
@@ -401,15 +399,15 @@ describe('Birddog NFT', function () {
     it('should revert if the minter (who is not the owner) does not send the appropriate amount of ether', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await contract.pause(false);
-      const minter = accounts[1];
-      const recipient = await accounts[4].getAddress();
+      const minter = accounts[4];
+      const minterAddress = await accounts[4].getAddress();
       await contract.setCost(ethers.parseEther('0.04'));
       const costPerMint = await contract.cost();
       const mintAmount = 1;
       const totalCost = costPerMint * BigInt(mintAmount);
 
       await expect(
-        contract.connect(minter).mint(recipient, 1, {
+        contract.connect(minter).mint(1, {
           value: ethers.parseEther('0.03'),
         })
       ).to.be.reverted;
@@ -418,45 +416,39 @@ describe('Birddog NFT', function () {
     it('should revert if the contract is still paused', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await contract.pause(true);
-      const recipient = await accounts[4].getAddress();
 
-      await expect(contract.mint(recipient, 1)).to.be.reverted;
+      await expect(contract.mint(1)).to.be.reverted;
     });
 
     it('should revert if the mint amount is greater than the max mint amount', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await contract.pause(false);
-      const recipient = await accounts[4].getAddress();
       await contract.setMaxMintAmount(3);
 
-      await expect(contract.mint(recipient, 4)).to.be.reverted;
+      await expect(contract.mint(4)).to.be.reverted;
     });
 
     it('should revert if the mint amount is greater than the max supply (constant at 3000)', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await contract.pause(false);
-      const recipient = await accounts[4].getAddress();
       await contract.setMaxMintAmount(3001);
 
-      await expect(contract.mint(recipient, 3001)).to.be.reverted;
+      await expect(contract.mint(3001)).to.be.reverted;
     });
 
-    it('should revert if the token id is out of bounds (1 to 3000, inclusive)', async function () {
+    it('should revert if the amount to mint is 0', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await contract.pause(false);
-      const recipient = await accounts[4].getAddress();
 
-      await expect(contract.mint(recipient, 0)).to.be.reverted;
-      await expect(contract.mint(recipient, 3001)).to.be.reverted;
+      await expect(contract.mint(0)).to.be.reverted;
     });
 
     it('should move the total supply forward when minting', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await contract.pause(false);
-      const recipient = await accounts[4].getAddress();
       const mintCountSoFarFromConstructorAllocations = 7;
 
-      await contract.mint(recipient, 1);
+      await contract.mint(1);
 
       expect(await contract.totalSupply()).to.equal(1 + mintCountSoFarFromConstructorAllocations);
     });
