@@ -16,7 +16,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       forking: {
         url: `https://base-mainnet.g.alchemy.com/v2/${ALCHEMY_BASE_MAINNET_API_KEY}`,
-        blockNumber: 17832233,
+        blockNumber: 17876764,
       },
     },
     // Base Sepolia (testnet)
@@ -48,7 +48,7 @@ const config: HardhatUserConfig = {
     L1Etherscan: ETHERSCAN_API_KEY,
     L2Etherscan: BASESCAN_BASED_WHALE_API_KEY,
     darkMode: true,
-    enabled: false,
+    enabled: true,
   },
   mocha: {
     timeout: 100000,
