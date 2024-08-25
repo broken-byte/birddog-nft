@@ -24,6 +24,9 @@ const BirddogNFTModule = buildModule('BirddogNFT', (m) => {
     COLLECTION_LEVEL_BASE_URI, // _collectionBaseURI
   ]);
 
+  // 2. Unpause the contract
+  m.call(birddogNFT, 'pause', [false]);
+
   return { birddogNFT };
 });
 

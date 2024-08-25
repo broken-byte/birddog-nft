@@ -49,6 +49,9 @@ const BirddogNFTModule = buildModule('BirddogNFT', (m) => {
       console.error('Error parsing CSV:', error);
     });
 
+  // 4. Unpause the contract
+  m.call(birddogNFT, 'pause', [false]);
+
   return { birddogNFT };
 });
 
