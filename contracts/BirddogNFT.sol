@@ -106,7 +106,8 @@ contract BirddogNFT is ERC721Royalty, Ownable {
       require(mintAmount <= maxMintAmount, "Mint amount exceeds max mint amount");
 
       for (uint j = 0; j < mintAmount; j++) {
-        if (alreadyMinted(sequentialMintCounter)) {
+        // Skip already minted token ids
+        while (alreadyMinted(sequentialMintCounter)) {
           sequentialMintCounter++;
         }
 
@@ -125,6 +126,7 @@ contract BirddogNFT is ERC721Royalty, Ownable {
     require(!paused, "Contract is paused");
     require(_mintAmount > 0, "You cannot mint 0 tokens");
     require(_mintAmount <= maxMintAmount, "You are not allowed to buy this many tokens at once");
+    require(!isSoldOut, "The collection is sold out, you cannot mint more tokens");
 
     require(totalSupply + _mintAmount <= MAX_SUPPLY, "Exceeds maximum supply");
     if (totalSupply + _mintAmount == MAX_SUPPLY) {
@@ -132,10 +134,15 @@ contract BirddogNFT is ERC721Royalty, Ownable {
     }
 
     if (msg.sender != owner()) {
-      require(msg.value >= cost * _mintAmount);
+      require(msg.value >= cost * _mintAmount, "You need to send more ETH to cover the mint cost.");
     }
 
     for (uint256 i = 0; i < _mintAmount; i++) {
+      // Skip already minted token ids
+      while (alreadyMinted(sequentialMintCounter)) {
+        sequentialMintCounter++;
+      }
+
       _safeMint(msg.sender, sequentialMintCounter, "" /* data */);
       sequentialMintCounter++;
     }

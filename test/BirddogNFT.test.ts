@@ -396,6 +396,17 @@ describe('Birddog NFT', function () {
       );
     });
 
+    it('should be able to mint past token ids that have already been minted', async function () {
+      const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
+      await contract.pause(false);
+      await contract.setMaxMintAmount(35);
+      const sequentialMintSoFarFromConstructorAllocations = 5;
+
+      // Token ID #37 is already minted for the artist in the constructor, so 5 + 35 = 40,
+      //which should test minting past the already minted token ID.
+      expect(await contract.mint(35)).to.not.be.reverted;
+    });
+
     it('should revert if the minter (who is not the owner) does not send the appropriate amount of ether', async function () {
       const { contract, accounts } = await loadFixture(deployBirddogNFTFixture);
       await contract.pause(false);
